@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>엔드필드 무역 계산기 (Fixed List)</title>
+    <title>엔드필드 무역 상세 분석기</title>
     <style>
         :root {
             --bg-color: #0f1014;
@@ -12,6 +12,7 @@
             --text: #ffffff;
             --text-sub: #94a3b8;
             --positive: #10b981;
+            --negative: #ef4444;
             --border: #2d313d;
         }
 
@@ -21,7 +22,7 @@
             display: flex; flex-direction: column; align-items: center;
         }
 
-        .container { width: 98%; max-width: 900px; }
+        .container { width: 98%; max-width: 1100px; }
 
         header {
             display: flex; justify-content: space-between; align-items: center;
@@ -40,29 +41,32 @@
         .table-wrapper {
             background: var(--card-bg); border-radius: 12px; border: 1px solid var(--border);
             overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow-x: auto;
         }
 
-        table { width: 100%; border-collapse: collapse; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; }
         th { background: #252833; color: var(--text-sub); font-size: 0.75rem; padding: 12px 5px; }
         td { padding: 12px 5px; border-bottom: 1px solid var(--border); text-align: center; transition: background 0.3s; }
 
         input.table-input {
             background: #2d313d; border: 1px solid #3f4454; color: white;
-            padding: 8px; width: 85%; border-radius: 4px; text-align: center; font-size: 1rem;
+            padding: 8px; width: 90%; border-radius: 4px; text-align: center; font-size: 0.95rem;
         }
         input:focus { border-color: var(--primary); outline: none; }
 
         .btn-group { display: flex; gap: 10px; margin-bottom: 15px; }
-        button { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .btn-add { background: #334155; color: white; }
 
-        /* 하이라이트 스타일 */
         .best-pick { background: rgba(255, 207, 0, 0.15) !important; }
         .best-badge { 
             background: var(--primary); color: black; padding: 2px 6px; 
             border-radius: 4px; font-size: 0.7rem; font-weight: bold; margin-top: 4px; display: inline-block;
         }
-        .profit-text { color: var(--positive); font-weight: bold; font-size: 1.2rem; }
+        
+        .val-buy { color: #94a3b8; } /* 구매비용은 차분하게 */
+        .val-sell { color: #60a5fa; } /* 판매비용은 파란색 계열 */
+        .val-profit { color: var(--positive); font-weight: bold; font-size: 1.1rem; }
         .highlight { color: var(--primary); font-weight: bold; }
     </style>
 </head>
@@ -71,8 +75,8 @@
 <div class="container">
     <header>
         <div>
-            <h1 style="margin:0; font-size: 1.6rem; color: var(--primary);">Endfield One-Pick</h1>
-            <p style="margin:5px 0 0 0; font-size: 0.85rem; color: var(--text-sub);">실시간 수익 비교 분석기</p>
+            <h1 style="margin:0; font-size: 1.6rem; color: var(--primary);">Endfield Trade Analyzer</h1>
+            <p style="margin:5px 0 0 0; font-size: 0.85rem; color: var(--text-sub);">상세 비용 및 차익 분석 시뮬레이터</p>
         </div>
         <div class="config-group">
             <div class="input-box">
@@ -94,12 +98,14 @@
         <table>
             <thead>
                 <tr>
-                    <th style="width: 55px;">No</th>
+                    <th style="width: 60px;">No</th>
                     <th>아이템명</th>
-                    <th>현재가 (구매)</th>
-                    <th>판매가</th>
-                    <th style="width: 150px;">최대 매입</th>
-                    <th style="width: 180px;">총 예상 이득</th>
+                    <th>단가(구매)</th>
+                    <th>단가(판매)</th>
+                    <th style="width: 100px;">최대매입</th>
+                    <th>총 구매비용</th>
+                    <th>총 판매비용</th>
+                    <th style="width: 150px;">최종 차익</th>
                     <th style="width: 50px;">-</th>
                 </tr>
             </thead>
@@ -120,7 +126,9 @@
             <td><input type="number" class="table-input buy" placeholder="0" oninput="calculate()" onclick="this.select()"></td>
             <td><input type="number" class="table-input sell" placeholder="0" oninput="calculate()" onclick="this.select()"></td>
             <td class="max-qty">-</td>
-            <td class="total-profit">-</td>
+            <td class="total-buy-val">-</td>
+            <td class="total-sell-val">-</td>
+            <td class="total-profit-val">-</td>
             <td><button style="background:transparent; color:#64748b; font-size:1.2rem;" onclick="this.parentElement.parentElement.remove(); calculate();">✕</button></td>
         `;
         tbody.appendChild(row);
@@ -135,45 +143,41 @@
         let maxProfit = -1;
         let results = [];
 
-        // 1. 모든 행 계산 및 최대 수익 찾기
         rows.forEach((row, idx) => {
-            const buy = parseFloat(row.querySelector('.buy').value) || 0;
-            const sell = parseFloat(row.querySelector('.sell').value) || 0;
-            const unitProfit = sell - buy;
+            const buyPrice = parseFloat(row.querySelector('.buy').value) || 0;
+            const sellPrice = parseFloat(row.querySelector('.sell').value) || 0;
+            const unitProfit = sellPrice - buyPrice;
 
-            const affordable = buy > 0 ? Math.floor(funds / buy) : 0;
+            const affordable = buyPrice > 0 ? Math.floor(funds / buyPrice) : 0;
             const finalQty = Math.min(affordable, limit);
+            
+            const totalBuy = buyPrice * finalQty;
+            const totalSell = sellPrice * finalQty;
             const totalProfit = unitProfit * finalQty;
 
-            // 값 저장
-            results.push({ totalProfit, finalQty });
-            
-            // 번호 매기기 (정렬 안 하므로 인덱스 순서대로)
-            row.querySelector('.item-no').innerText = idx + 1;
-
-            // 최대 수익 업데이트 (수익이 0보다 클 때만)
+            results.push({ finalQty, totalBuy, totalSell, totalProfit });
             if (totalProfit > 0 && totalProfit > maxProfit) {
                 maxProfit = totalProfit;
             }
         });
 
-        // 2. 결과 UI 반영 및 하이라이트 처리
         rows.forEach((row, idx) => {
             const res = results[idx];
             
             row.querySelector('.max-qty').innerHTML = res.finalQty > 0 ? `<span class="highlight">${res.finalQty}</span> 개` : `-`;
-            const tpCell = row.querySelector('.total-profit');
-            tpCell.innerHTML = res.totalProfit > 0 ? `<span class="profit-text">${res.totalProfit.toLocaleString()}</span>` : `-`;
+            row.querySelector('.total-buy-val').innerText = res.totalBuy > 0 ? res.totalBuy.toLocaleString() : `-`;
+            row.querySelector('.total-sell-val').innerText = res.totalSell > 0 ? res.totalSell.toLocaleString() : `-`;
+            
+            const profitCell = row.querySelector('.total-profit-val');
+            profitCell.innerHTML = res.totalProfit > 0 ? `<span class="val-profit">${res.totalProfit.toLocaleString()}</span>` : `-`;
 
-            // 하이라이트 적용 (현재 수익이 최대 수익과 같고 0보다 클 때)
+            const noCell = row.querySelector('.item-no');
             if (res.totalProfit > 0 && res.totalProfit === maxProfit) {
                 row.classList.add('best-pick');
-                if (!row.querySelector('.best-badge')) {
-                    row.querySelector('.item-no').innerHTML += `<br><span class="best-badge">BEST</span>`;
-                }
+                noCell.innerHTML = `${idx+1}<br><span class="best-badge">BEST</span>`;
             } else {
                 row.classList.remove('best-pick');
-                row.querySelector('.item-no').innerText = idx + 1;
+                noCell.innerText = idx + 1;
             }
         });
     }
