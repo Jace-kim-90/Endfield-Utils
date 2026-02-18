@@ -3,36 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Utility Portal</title>
+    <title>Jiseok's Gaming Lab</title>
     <style>
-        /* 게이머들을 위한 깔끔한 다크 테마 */
-        body { background: #1a1a1a; color: #e0e0e0; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .container { max-width: 600px; width: 100%; background: #2d2d2d; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        h2 { border-bottom: 2px solid #4a9eff; padding-bottom: 10px; color: #4a9eff; }
-        input, button { padding: 10px; border-radius: 4px; border: none; margin: 5px 0; width: 100%; box-sizing: border-box; }
-        input { background: #3d3d3d; color: white; }
-        button { background: #4a9eff; color: white; cursor: pointer; font-weight: bold; }
-        button:hover { background: #357abd; }
-        .result { margin-top: 20px; padding: 15px; background: #3d3d3d; border-radius: 8px; font-size: 1.2rem; text-align: center; }
+        :root {
+            --bg-color: #0f1014;
+            --card-bg: #1c1e26;
+            --accent: #00d4ff;
+            --text-main: #ffffff;
+            --text-sub: #94a3b8;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Pretendard', sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .dashboard {
+            width: 90%;
+            max-width: 1000px;
+            padding: 40px 20px;
+        }
+
+        header {
+            margin-bottom: 40px;
+            text-align: left;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            background: linear-gradient(to right, #00d4ff, #0055ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: var(--text-sub);
+            margin-top: 10px;
+        }
+
+        /* 그리드 레이아웃 */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        /* 카드 디자인 */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid #2d313d;
+            border-radius: 16px;
+            padding: 24px;
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            border-color: var(--accent);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
+        }
+
+        .card h3 {
+            margin: 0;
+            font-size: 1.4rem;
+            color: var(--accent);
+        }
+
+        .card p {
+            font-size: 0.95rem;
+            color: var(--text-sub);
+            line-height: 1.5;
+            margin: 15px 0;
+        }
+
+        .status {
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+        }
+
+        .status::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status.online::before { background-color: #10b981; }
+        .status.pending::before { background-color: #f59e0b; }
+
+        /* 하단 정보 */
+        footer {
+            margin-top: 50px;
+            text-align: center;
+            color: var(--text-sub);
+            font-size: 0.8rem;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>🎮 게임 유틸리티 계산기</h2>
-        <p>간단한 계산이나 메모를 여기 적으세요.</p>
-        <input type="number" id="val1" placeholder="값 1">
-        <input type="number" id="val2" placeholder="값 2">
-        <button onclick="calculate()">더하기 계산</button>
-        
-        <div id="result" class="result">결과가 여기에 표시됩니다.</div>
+
+<div class="dashboard">
+    <header>
+        <h1>JISEOK.LAB</h1>
+        <p>게임 최적화 및 무역 유틸리티 대시보드</p>
+    </header>
+
+    <div class="grid">
+        <a href="trade.html" class="card">
+            <div>
+                <div class="status online">Ready</div>
+                <h3>Endfield Trade</h3>
+                <p>무역 차익 계산기. 수익률(ROI) 및 순수익 기반 아이템 우선순위 정렬 시스템.</p>
+            </div>
+            <span>바로가기 →</span>
+        </a>
+
+        <a href="#" class="card" onclick="alert('준비 중입니다!')">
+            <div>
+                <div class="status pending">In Development</div>
+                <h3>Tarkov Market</h3>
+                <p>탈출 전 아이템 칸당 가치(Value per Slot) 계산기 및 플리마켓 최저가 연동 도구.</p>
+            </div>
+            <span>Coming Soon</span>
+        </a>
+
+        <a href="#" class="card" onclick="alert('준비 중입니다!')">
+            <div>
+                <div class="status pending">In Development</div>
+                <h3>Pal Breeding</h3>
+                <p>거점 전용 팔(Pal) 배합 조합법 및 작업 적성별 최적 배치 시뮬레이터.</p>
+            </div>
+            <span>Coming Soon</span>
+        </a>
     </div>
 
-    <script>
-        function calculate() {
-            const v1 = Number(document.getElementById('val1').value);
-            const v2 = Number(document.getElementById('val2').value);
-            document.getElementById('result').innerText = "총합: " + (v1 + v2);
-        }
-    </script>
+    <footer>
+        &copy; 2026 Jiseok Kim. All Rights Reserved.
+    </footer>
+</div>
+
 </body>
 </html>

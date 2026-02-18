@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>엔드필드 무역 계산기</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --primary: #ffcf00; /* 엔드필드 포인트 컬러 */
+            --text: #e0e0e0;
+            --positive: #4caf50;
+            --negative: #f44336;
+            --border: #333;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text);
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: #252525;
+            color: var(--primary);
+            font-size: 0.9rem;
+        }
+
+        input {
+            background: #333;
+            border: 1px solid #444;
+            color: white;
+            padding: 8px;
+            width: 80%;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .btn-add { background: #444; color: white; }
+        .btn-calc { background: var(--primary); color: black; }
+        .btn-del { background: #662222; color: white; padding: 5px 10px; }
+
+        button:hover { opacity: 0.8; }
+
+        .profit-plus { color: var(--positive); font-weight: bold; }
+        .profit-minus { color: var(--negative); font-weight: bold; }
+        
+        .roi-badge {
+            font-size: 0.8rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Endfield Trade Calculator</h1>
+        <p>무역 차익 및 구매 우선순위 분석</p>
+    </header>
+
+    <div class="btn-group">
+        <button class="btn-add" onclick="addRow()">+ 아이템 추가</button>
+        <button class="btn-calc" onclick="calculateAndSort()">계산 및 수익순 정렬</button>
+    </div>
+
+    <table id="tradeTable">
+        <thead>
+            <tr>
+                <th>아이템명</th>
+                <th>기본가 (Base)</th>
+                <th>내 상점 (%)</th>
+                <th>친구 상점 (%)</th>
+                <th>순수익 (Profit)</th>
+                <th>수익률 (ROI)</th>
+                <th>관리</th>
+            </tr>
+        </thead>
+        <tbody id="itemBody">
+            </tbody>
+    </table>
+</div>
+
+<script>
+    // 페이지 로드 시 빈 행 하나 추가
+    window.onload = () => addRow();
+
+    function addRow() {
+        const tbody = document.getElementById('itemBody');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="text" class="name" placeholder="아이템명" value="아이템"></td>
+            <td><input type="number" class="base" placeholder="100" value="100"></td>
+            <td><input type="number" class="buy" placeholder="80" value="80"></td>
+            <td><input type="number" class="sell" placeholder="120" value="120"></td>
+            <td class="profit-cell">-</td>
+            <td class="roi-cell">-</td>
+            <td><button class="btn-del" onclick="this.parentElement.parentElement.remove()">삭제</button></td>
+        `;
+        tbody.appendChild(row);
+    }
+
+    function calculateAndSort() {
+        const rows = Array.from(document.querySelectorAll('#itemBody tr'));
+        const data = rows.map(row => {
+            const base = parseFloat(row.querySelector('.base').value) || 0;
+            const buyPct = (parseFloat(row.querySelector('.buy').value) || 0) / 100;
+            const sellPct = (parseFloat(row.querySelector('.sell').value) || 0) / 100;
+            
+            const profit = Math.round(base * (sellPct - buyPct));
+            const roi = buyPct > 0 ? ((sellPct - buyPct) / buyPct * 100).toFixed(1) : 0;
+
+            return {
+                element: row,
+                name: row.querySelector('.name').value,
+                base: base,
+                buy: row.querySelector('.buy').value,
+                sell: row.querySelector('.sell').value,
+                profit: profit,
+                roi: roi
+            };
+        });
+
+        // 1. 순수익 기준 내림차순 정렬
+        data.sort((a, b) => b.profit - a.profit);
+
+        // 2. 테이블 재생성 및 결과 반영
+        const tbody = document.getElementById('itemBody');
+        tbody.innerHTML = ''; // 기존 내용 삭제
+
+        data.forEach(item => {
+            const row = item.element;
+            const profitCell = row.querySelector('.profit-cell');
+            const roiCell = row.querySelector('.roi-cell');
+
+            // 결과 텍스트 및 색상 적용
+            profitCell.innerText = item.profit.toLocaleString() + " G";
+            profitCell.className = 'profit-cell ' + (item.profit >= 0 ? 'profit-plus' : 'profit-minus');
+            
+            roiCell.innerHTML = `<span class="roi-badge">${item.roi}%</span>`;
+            
+            tbody.appendChild(row);
+        });
+    }
+</script>
+
+</body>
+</html>
